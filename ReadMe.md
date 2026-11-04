@@ -1,13 +1,2 @@
 vartalap is a messaging platform where one can connect with thier favourite people and enjoy the conversiation without any disturbance.
 
-
-I am trying to learn more about MERN stacka and other web technologies like socket which will be used to complete this project. 
-
-
-
-
-
-FRONTEND: REACTJS
-BACKEND: NODEJS (EXPRESSJS :WEB FRAMEWORK) 
-DATABASE : MONGODB
-SOCKET.IO :REALTIME COMMUNICATION LIBRARY
