@@ -17,7 +17,7 @@ function App() {
     <ThemeProvider>
       <WallpaperProvider>
            <Routes>
-            <Route path="/" element={isSignedIn? <ChatPage/>:<Navigate to={"/auth"}replace/>} />
+            <Route path="/" element={isSigned? <ChatPage/>:<Navigate to={"/auth"}replace/>} />
             <Route path="/" element={!isSigned ? <AuthPage/>:<Navigate to={"/"} replace/>}/>
            </Routes>
       </WallpaperProvider>
