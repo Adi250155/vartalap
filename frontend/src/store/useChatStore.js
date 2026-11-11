@@ -72,7 +72,10 @@ export const useChatStore = create(
 
         try {
           const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-          set({ messages: [...messages, res.data], composerText: "" });
+         set((state) => ({
+           messages: [...state.messages, res.data],
+           composerText: "",
+           }));
           get().getConversations();
           return true;
         } catch (error) {

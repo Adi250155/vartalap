@@ -1,6 +1,8 @@
+
 import { useWallpaper } from "../context/wallpaper";
 import { useChatStore } from "../store/useChatStore";
 import { useSelectedConversation } from "../hooks/useSelectedConversation";
+import { useAuthStore } from "../store/useAuthStore";
 import { useEffect } from "react";
 import ChatSidebar from "../components/chat/ChatSidebar";
 import { ChatHeader } from "../components/chat/ChatHeader";
@@ -9,6 +11,8 @@ import { ChatComposer } from "../components/chat/ChatComposer";
 
 function ChatPage() {
   const { frameStyle } = useWallpaper();
+
+  const socket = useAuthStore((state) => state.socket);
 
   const getConversations = useChatStore((state) => state.getConversations);
   const getMessages = useChatStore((state) => state.getMessages);
@@ -24,14 +28,31 @@ function ChatPage() {
   }, [getConversations, getUsers]);
 
   useEffect(() => {
-    if (!activeConversationId) return;
+  if (!activeConversationId || !socket) return;
 
+  const handleConnect = () => {
     getMessages(activeConversationId);
     subscribeToMessages(activeConversationId);
+  };
 
-    // cleanup
-    return () => unsubscribeFromMessages();
-  }, [getMessages, activeConversationId, subscribeToMessages, unsubscribeFromMessages]);
+  if (socket.connected) {
+    handleConnect();
+  } else {
+    socket.on("connect", handleConnect);
+  }
+
+  // cleanup
+  return () => {
+    socket.off("connect", handleConnect);
+    unsubscribeFromMessages();
+  };
+}, [
+  getMessages,
+  activeConversationId,
+  socket,
+  subscribeToMessages,
+  unsubscribeFromMessages
+]);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden p-2 sm:p-3 md:p-8" style={frameStyle}>
@@ -52,4 +73,5 @@ function ChatPage() {
     </div>
   );
 }
+
 export default ChatPage;

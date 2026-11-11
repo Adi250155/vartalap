@@ -29,12 +29,13 @@ io.on("connection",(socket)=>{
       //if you wana make it visible to some specific person only then : io.to(userIdto whom you wana let know).emit();
       
       //used to listen for events
-      socket.on( "disconnect",()=>{
-             if(userId) delete userSocketMap[userId];
-             io.emit("getOnlineUsers",Object.keys(userSocketMap));
-      }) ;
-       
+     socket.on("disconnect", () => {
+    if (userId && userSocketMap[userId] === socket.id) {
+        delete userSocketMap[userId];
+    }
 
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+});
       
 });
 
