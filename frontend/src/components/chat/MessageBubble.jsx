@@ -1,5 +1,8 @@
+
 import { withTransform } from "../../lib/imagekit";
 import { MessageVideo } from "./MessageVideo";
+import { useChatStore } from "../../store/useChatStore";
+import { Trash2 } from "lucide-react";
 
 // Compress + size images for the bubble (q-auto works for images; f-auto picks WebP/AVIF).
 const IMAGE_TRANSFORM = "q-auto,w-640,f-auto";
@@ -9,10 +12,23 @@ export function MessageBubble({ message }) {
   const hasImage = Boolean(message.imageUrl);
   const hasVideo = Boolean(message.videoUrl);
 
+  const deleteMessage = useChatStore((state) => state.deleteMessage);
+  const isDeleting = useChatStore(
+    (state) => state.deletingMessageId === message.id
+  );
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this message?")) {
+      return;
+    }
+
+    await deleteMessage(message.id);
+  };
+
   return (
     <div className={`flex w-full ${isOwnMessage ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[min(90%,28rem)] rounded-2xl px-3 py-2 text-[15px] leading-snug sm:max-w-[min(75%,28rem)] sm:px-3.5 ${
+        className={`group relative max-w-[min(90%,28rem)] rounded-2xl px-3 py-2 text-[15px] leading-snug sm:max-w-[min(75%,28rem)] sm:px-3.5 ${
           isOwnMessage
             ? "rounded-br-md bg-accent text-accent-foreground"
             : "rounded-bl-md bg-surface"
@@ -25,17 +41,35 @@ export function MessageBubble({ message }) {
             className="mb-1.5 max-h-40 max-w-full rounded-lg object-cover sm:max-h-52 sm:rounded-xl"
           />
         ) : null}
+
         {hasVideo ? <MessageVideo src={message.videoUrl} /> : null}
+
         {message.text ? (
           <p className="whitespace-pre-wrap wrap-break-word">{message.text}</p>
         ) : null}
-        <p
-          className={`mt-1 text-[11px] tabular-nums ${
-            isOwnMessage ? "text-accent-foreground/75" : "text-muted"
-          }`}
-        >
-          {message.time}
-        </p>
+
+        <div className="mt-1 flex items-center justify-between gap-4">
+          <p
+            className={`text-[11px] tabular-nums ${
+              isOwnMessage ? "text-accent-foreground/75" : "text-muted"
+            }`}
+          >
+            {message.time}
+          </p>
+
+          {isOwnMessage ? (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              title="Delete message"
+              aria-label="Delete message"
+              className="rounded-md p-1 opacity-70 transition hover:bg-black/10 hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Trash2 size={14} />
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

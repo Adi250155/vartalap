@@ -1,5 +1,5 @@
 import express from "express";
-import {getConversationsForSidebar,getMessages,getUsersForSidebar,sendMessage,} from "../controllers/message.controller.js";
+import {getConversationsForSidebar,getMessages,getUsersForSidebar,sendMessage,  deleteMessage} from "../controllers/message.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/upload.middleware.js";
 
@@ -11,5 +11,5 @@ router.get("/users", getUsersForSidebar);
 router.get("/conversations", getConversationsForSidebar);
 router.get("/:id", getMessages);
 router.post("/send/:id", upload.single("media"), sendMessage);
-
+router.delete("/:id", deleteMessage);
 export default router;

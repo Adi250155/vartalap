@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import { hasImageKitConfig, uploadChatMedia } from "../lib/imagekit.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
-
+import mongoose from "mongoose";
 
 export async function getUsersForSidebar(req,res){
     try{
@@ -111,3 +111,54 @@ export async function sendMessage(req,res){
     }
 }
 
+
+export async function deleteMessage(req, res) {
+    try {
+        const { id: messageId } = req.params;
+        const myId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(messageId)) {
+            return res.status(400).json({ message: "Invalid message ID" });
+        }
+
+        const deletedMessage = await Message.findOneAndDelete({
+            _id: messageId,
+            senderId: myId,
+        });
+
+        if (!deletedMessage) {
+            return res.status(404).json({
+                message: "Message not found or you are not authorized to delete it",
+            });
+        }
+
+        const senderSocketId = getReceiverSocketId(
+            deletedMessage.senderId.toString()
+        );
+
+        const receiverSocketId = getReceiverSocketId(
+            deletedMessage.receiverId.toString()
+        );
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit("messageDeleted", {
+                messageId: deletedMessage._id,
+            });
+        }
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("messageDeleted", {
+                messageId: deletedMessage._id,
+            });
+        }
+
+        res.status(200).json({
+            message: "Message deleted successfully",
+            messageId: deletedMessage._id,
+        });
+
+    } catch (error) {
+        console.error("Error in deleteMessage:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}

@@ -1,3 +1,4 @@
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { axiosInstance } from "../lib/axios";
@@ -6,20 +7,21 @@ import toast from "react-hot-toast";
 
 export const useChatStore = create(
   persist(
-    (set, get)=>({
-      users:[],
-      conversations:[],
-      messages:[],
-      selectedUser:null,
-      isConversationsLoading:false,
-      isUsersLoading:false,
-      isMessagesLoading:false,
-      activeConversationId:null,
-      searchQuery:"",
-      sidebarTab:"chats",
-      composerText:"",
-      isSoundEnabled:true,
-      isSendingMedia:false,
+    (set, get) => ({
+      users: [],
+      conversations: [],
+      messages: [],
+      selectedUser: null,
+      isConversationsLoading: false,
+      isUsersLoading: false,
+      isMessagesLoading: false,
+      activeConversationId: null,
+      searchQuery: "",
+      sidebarTab: "chats",
+      composerText: "",
+      isSoundEnabled: true,
+      isSendingMedia: false,
+      deletingMessageId: null,
 
       getUsers: async () => {
         set({ isUsersLoading: true });
@@ -79,6 +81,32 @@ export const useChatStore = create(
         }
       },
 
+      deleteMessage: async (messageId) => {
+        set({ deletingMessageId: messageId });
+
+        try {
+          await axiosInstance.delete(`/messages/${messageId}`);
+
+          set((state) => ({
+            messages: state.messages.filter(
+              (message) => String(message._id) !== String(messageId)
+            ),
+          }));
+
+          get().getConversations();
+
+          toast.success("Message deleted");
+          return true;
+        } catch (error) {
+          toast.error(
+            error.response?.data?.message || "Failed to delete message"
+          );
+          return false;
+        } finally {
+          set({ deletingMessageId: null });
+        }
+      },
+
       subscribeToMessages: (userId) => {
         if (!userId) return;
 
@@ -86,6 +114,8 @@ export const useChatStore = create(
         if (!socket) return;
 
         socket.off("newMessage");
+        socket.off("messageDeleted");
+
         socket.on("newMessage", (newMessage) => {
           // if im not the receiver don't do anything just return
           if (String(newMessage.senderId) !== String(userId)) return;
@@ -94,11 +124,22 @@ export const useChatStore = create(
 
           get().getConversations();
         });
+
+        socket.on("messageDeleted", ({ messageId }) => {
+          set((state) => ({
+            messages: state.messages.filter(
+              (message) => String(message._id) !== String(messageId)
+            ),
+          }));
+
+          get().getConversations();
+        });
       },
 
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
         socket?.off("newMessage");
+        socket?.off("messageDeleted");
       },
 
       setSelectedUser: (selectedUser) => set({ selectedUser }),
